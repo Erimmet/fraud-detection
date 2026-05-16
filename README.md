@@ -1,31 +1,44 @@
 # 💳 Fraud Detection System (Machine Learning)
 
-A machine learning project focused on detecting fraudulent financial transactions using structured transaction data. This project combines exploratory data analysis, feature engineering, and a classification pipeline to identify suspicious activity.
+A production-ready fraud detection system using **XGBoost** to identify fraudulent financial transactions in real-time. This project combines feature engineering, class imbalance handling, and an interactive web interface for predictions.
+
+---
+
+## 🎯 Key Achievements
+
+- **96% fraud detection rate** (Recall)
+- **55% precision** at deployment threshold
+- **99% accuracy** for legitimate transactions
+- **Real-time predictions** via Streamlit web app
+- **0.8 false alarms per real fraud** caught
 
 ---
 
 ## 📊 Project Overview
 
-Financial fraud detection is a highly imbalanced classification problem where fraudulent transactions represent a very small percentage of the data.  
+Financial fraud detection is a highly imbalanced classification problem where fraudulent transactions represent <0.2% of all transactions. This project delivers a robust XGBoost model that catches 96% of fraud while maintaining manageable false alarm rates.
 
-This project aims to:
-- Analyze transaction behavior patterns
-- Identify key indicators of fraud
-- Build a robust classification model to detect fraudulent transactions
+### Business Impact
+| Metric | Value |
+|--------|-------|
+| Frauds Caught | 96.1% |
+| False Alarm Ratio | 0.8:1 |
+| Model Precision | 55.3% |
+| Production Threshold | 0.95 |
 
 ---
 
 ## 📁 Dataset
 
-- Transaction-level financial dataset
-- Includes features such as:
-  - Transaction type
-  - Amount
-  - Account balances (before and after transaction)
-- Target variable:
-  - `isFraud` (1 = Fraud, 0 = Legitimate)
+- Transaction-level financial dataset from Kaggle
+- Features include:
+  - Transaction type (PAYMENT, TRANSFER, CASH_OUT, DEPOSIT)
+  - Transaction amount
+  - Sender balance (before/after)
+  - Receiver balance (before/after)
+- Target variable: `isFraud` (1 = Fraud, 0 = Legitimate)
 
-> (https://www.kaggle.com/datasets/amanalisiddiqui/fraud-detection-dataset/data)
+**Source:** [Fraud Detection Dataset](https://www.kaggle.com/datasets/amanalisiddiqui/fraud-detection-dataset/data)
 
 ---
 
@@ -33,77 +46,32 @@ This project aims to:
 
 Key insights discovered:
 
-- Fraud cases are **extremely imbalanced**
-- Most fraud occurs in:
-  - `TRANSFER`
-  - `CASH_OUT`
-- Transaction amount distribution is **highly skewed**
-- Certain balance inconsistencies are strong fraud indicators
+- **Class Imbalance:** Only 0.13% of transactions are fraudulent
+- **Fraud Patterns:** 99.9% of fraud occurs in `TRANSFER` and `CASH_OUT` types
+- **Amount Skew:** Fraud amounts vary widely, requiring log transformation for analysis
+- **Balance Manipulation:** Fraudsters often create balance inconsistencies
 
 ### Visualizations included:
 - Transaction type distribution
 - Fraud rate by transaction type
 - Log-transformed amount distribution
 - Correlation heatmap
+- Precision-Recall curves
 
 ---
 
 ## 🛠 Feature Engineering
 
-New features created:
-- `balanceDiffOrig` = oldbalanceOrg − newbalanceOrig  
-- `balanceDiffDest` = oldbalanceDest − newbalanceDest  
+Engineered features that significantly improved model performance:
 
-These features help capture abnormal transaction patterns.
-
----
-
-## 🤖 Model
-
-### Algorithm:
-- Logistic Regression
-
-### Why?
-- Interpretable
-- Performs well with proper preprocessing
-- Works efficiently with imbalanced data when adjusted
-
-### Techniques used:
-- `class_weight='balanced'` to handle class imbalance
-- Feature scaling (`StandardScaler`)
-- One-hot encoding for categorical variables
-
----
-
-## ⚙️ Pipeline
-
-A complete ML pipeline was built using:
-
-- `ColumnTransformer`
-- `Pipeline`
-
-This ensures:
-- Clean preprocessing
-- Reproducibility
-- Easy deployment
-
----
-
-## 📈 Evaluation
-
-Model evaluated using:
-- Classification Report (Precision, Recall, F1-score)
-- Confusion Matrix
-
-Focus was placed on:
-- Detecting fraud (Recall for class 1)
-- Minimizing false negatives
-
----
-
-## 💾 Model Export
-
-The trained model is saved using:
-
+### Created Features:
 ```python
-joblib.dump(pipeline, 'fraud_detection_model.pkl')
+# Balance differences (captures account activity)
+balanceDiffOrig = oldbalanceOrg - newbalanceOrig
+balanceDiffDest = oldbalanceDest - newbalanceDest
+
+# Balance error (catches destination account manipulation)
+errorBalanceDest = oldbalanceDest + amount - newbalanceDest
+
+# Account emptying indicator (common fraud pattern)
+is_sender_emptied = 1 if newbalanceOrig == 0 else 0
